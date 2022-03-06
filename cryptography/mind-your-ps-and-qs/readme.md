@@ -8,7 +8,7 @@ In RSA, a small `e` value can be problematic, but what about `N`? Can you decryp
   
 ### Flag
 ```
-picoCTF{sma11_N_n0_g0od_23540368}
+picoCTF{sma11_N_n0_g0od_********}
 ```
 ### Detailed Solution
 https://www.dcode.fr/rsa-cipher

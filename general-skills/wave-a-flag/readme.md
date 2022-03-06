@@ -8,7 +8,7 @@ Can you invoke help flags for a tool or binary? [This program](https://mercury.p
   
 ### Flag
 ```
-picoCTF{b1scu1ts_4nd_gr4vy_30e77291}
+picoCTF{b1scu1ts_4nd_gr4vy_********}
 ```
 ### Detailed Solution
 ```

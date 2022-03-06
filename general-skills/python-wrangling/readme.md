@@ -9,7 +9,7 @@ Python scripts are invoked kind of like programs in the Terminal... Can you run 
 ### Flag
   
 ```
-picoCTF{4p0110_1n_7h3_h0us3_aa821c16}
+picoCTF{4p0110_1n_7h3_h0us3_********}
 ```
 ### Detailed Solution
   
