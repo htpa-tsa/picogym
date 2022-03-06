@@ -22,4 +22,8 @@ wget https://mercury.picoctf.net/static/33996e32dce022205a6a36f69aba56f0/flag
 cat flag
 ```
   
+<<<<<<< HEAD:general-skills/obedient-cat/readme.md
 </details>
+=======
+</details>
+>>>>>>> 4895ea6dbee1b21b7542bb96a5c3de65634b3cf4:general-skills/obedient-cat.md
