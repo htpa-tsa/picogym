@@ -4,7 +4,7 @@ Documentation per-problem for the [picoCTF](https://play.picoctf.org/practice) p
 - **Web Exploitation**: Exploiting vulnerabilities in web applications
 - **Cryptography**: Identifying and decrypting ciphertext
 - **Reverse Engineering**: Understanding and manipulating the functionality of a program
-- **Forensics**: Recovering data crumbs of supposedly deleted data
+- **Forensics**: Analysis and/or recovery or corrupted/deleted data
 - **General Skills**: Everyday cybersecurity techniques
 - **Binary Exploitation**: Exploiting vulnerabilities in machine programs
 
