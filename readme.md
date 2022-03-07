@@ -14,7 +14,7 @@ Of course, we impore you to try your absolute hardest before looking at this doc
 To add pages to this wiki, please follow common practice; fork the repo and sending a pull request after changes. Anything would be massively appreciated! 💙
 
 ### Contact
-- htpa.tsa@gmail.com
+- htpatsa@gmail.com
 - [@jktrn](https://github.com/jktrn)
 
 <p align="right"><sub>(Banner credit to <a href="https://unsplash.com/photos/f5pTwLHCsAg">ngeshlew</a> on Unsplash)</sub></p>
