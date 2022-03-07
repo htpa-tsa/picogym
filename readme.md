@@ -11,7 +11,7 @@ Documentation per-problem for the [picoCTF](https://play.picoctf.org/practice) p
 Of course, we impore you to try your absolute hardest before looking at this documentation. Or, for challenges with varying solutions, you can check out how we did them!
 
 ### Contribute
-To add pages to this wiki, please generate a new [discussion](https://github.com/htpa-tsa/cyber/discussions) requesting collaborator permissions, or fork this repository with the edited pages in `.md` format within a folder titled your GitHub handle. Anything would be massively appreciated! 💙
+To add pages to this wiki, please follow common practice; fork the repo and sending a pull request after changes. Anything would be massively appreciated! 💙
 
 ### Contact
 - htpa.tsa@gmail.com
