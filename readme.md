@@ -7,6 +7,6 @@ Categories include:
 - **Reverse Engineering**: Understanding and manipulating the functionality of a program
 - **Forensics**: Recovering data crumbs of supposedly deleted data
 - **General Skills**: Everyday cybersecurity techniques
-- **Binary Exploitation**: Exploiting vulnerabilities in machine programs
+- **Binary Exploitation**: Exploiting vulnerabilities in executable programs
 
 Of course, we impore you to try your absolute hardest before looking at this documentation. Or, for challenges with varying solutions, you can check out how we did them!
